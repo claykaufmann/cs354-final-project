@@ -1,10 +1,12 @@
-from mido import MidiFile
+from mido import MidiFile, MidiTrack, MetaMessage, Message
 import string
 import matplotlib.pyplot as plt
 import numpy as np
 
 """
 a series of helper functions designed to encode a midi file into a 2D numpy array
+
+taken from "https://medium.com/analytics-vidhya/convert-midi-file-to-numpy-array-in-python-7d00531890c"
 """
 
 
@@ -66,7 +68,11 @@ def track2seq(track):
     return result
 
 
-def mid2arry(mid, min_msg_pct=0.1):
+def midi_to_array(mid, min_msg_pct=0.1):
+    """
+    convert a midi file into an array
+    """
+
     tracks_len = [len(tr) for tr in mid.tracks]
     min_n_msg = max(tracks_len) * min_msg_pct
     # convert each track to nested list
@@ -88,9 +94,49 @@ def mid2arry(mid, min_msg_pct=0.1):
     return all_arys[min(ends) : max(ends)]
 
 
+def array_to_midi(ary, tempo=500000):
+    """
+    convert a numpy array back to a midi file
+
+    PARAMS:
+    tempo: the tempo to convert to
+    """
+
+    # get the difference
+    new_ary = np.concatenate([np.array([[0] * 88]), np.array(ary)], axis=0)
+    changes = new_ary[1:] - new_ary[:-1]
+    # create a midi file with an empty track
+    mid_new = MidiFile()
+    track = MidiTrack()
+    mid_new.tracks.append(track)
+    track.append(MetaMessage("set_tempo", tempo=tempo, time=0))
+    # add difference in the empty track
+    last_time = 0
+    for ch in changes:
+        if set(ch) == {0}:  # no change
+            last_time += 1
+        else:
+            on_notes = np.where(ch > 0)[0]
+            on_notes_vol = ch[on_notes]
+            off_notes = np.where(ch < 0)[0]
+            first_ = True
+            for n, v in zip(on_notes, on_notes_vol):
+                new_time = last_time if first_ else 0
+                track.append(Message("note_on", note=n + 21, velocity=v, time=new_time))
+                first_ = False
+            for n in off_notes:
+                new_time = last_time if first_ else 0
+                track.append(
+                    Message("note_off", note=n + 21, velocity=0, time=new_time)
+                )
+                first_ = False
+            last_time = 0
+    return mid_new
+
+
 def main():
     mid = MidiFile("data/raw/alb_esp1_format0.mid", clip=True)
-    result_array = mid2arry(mid)
+    result_array = midi_to_array(mid)
     plt.plot(
         range(result_array.shape[0]),
         np.multiply(np.where(result_array > 0, 1, 0), range(1, 89)),
@@ -100,6 +146,9 @@ def main():
     )
     plt.title("nocturne_27_2_(c)inoue.mid")
     plt.show()
+
+    # convert back to midi
+    mid_new = array_to_midi(result_array, 545455)
 
 
 main()
