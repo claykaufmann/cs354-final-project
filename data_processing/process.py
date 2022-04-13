@@ -6,11 +6,11 @@ import os
 
 
 
-directory = '../scrape/songs/'
+directory = '../songs/'
 
 for filename in os.listdir(directory):
     if filename.endswith(".mid"):
-        mid = MidiFile("../songs/0.mid", clip=True)
+        mid = MidiFile(directory + filename, clip=True)
         result_array = midi_to_array(mid)
         # plt.plot(
         #     range(result_array.shape[0]),
@@ -24,4 +24,5 @@ for filename in os.listdir(directory):
 
         # print(result_array)
         print(result_array.shape)
+        
         np.save(f"data/{filename}.npy", result_array)

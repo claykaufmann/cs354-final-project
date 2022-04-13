@@ -39,11 +39,11 @@ class VideoGameMusicDataset(data.Dataset):
         if torch.is_tensor(index):
             index = index.tolist()
 
-        filename = os.path.join(self.root_dir, self.files)
+        filename = os.path.join(self.root_dir, self.files[index])
 
         sample = np.load(filename)
 
-        if self.transform:
-            sample = self.transform(sample)
+        # if self.transform:
+        #     sample = self.transform(sample)
 
         return sample
