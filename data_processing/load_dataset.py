@@ -5,6 +5,9 @@ import torch
 import torch.nn as nn
 import torch.utils.data as data
 import math
+import numpy as np
+import os
+from MidiProcessing import midi_to_array
 
 
 class VideoGameMusicDataset(data.Dataset):
@@ -22,6 +25,7 @@ class VideoGameMusicDataset(data.Dataset):
     def get_files(self):
         """
         return a list of files within the data folder
+        these are just the names, not concatenated with the root dir
         """
         files = []
 
@@ -34,3 +38,14 @@ class VideoGameMusicDataset(data.Dataset):
         """
         get actual items
         """
+        if torch.is_tensor(index):
+            index = index.tolist()
+
+        filename = os.path.join(self.root_dir, self.files)
+
+        sample = np.load(filename)
+
+        if self.transform:
+            sample = self.transform(sample)
+
+        return sample
