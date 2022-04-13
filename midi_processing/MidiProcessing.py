@@ -135,7 +135,7 @@ def array_to_midi(ary, tempo=500000):
 
 
 def main():
-    mid = MidiFile("data/raw/alb_esp1_format0.mid", clip=True)
+    mid = MidiFile("song.midi", clip=True)
     result_array = midi_to_array(mid)
     plt.plot(
         range(result_array.shape[0]),
@@ -149,6 +149,6 @@ def main():
 
     # convert back to midi
     mid_new = array_to_midi(result_array, 545455)
-
+    
 
 main()
