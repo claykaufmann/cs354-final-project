@@ -10,7 +10,7 @@ directory = '../scrape/songs/'
 
 for filename in os.listdir(directory):
     if filename.endswith(".mid"):
-        mid = MidiFile("../scrape/songs/0.mid", clip=True)
+        mid = MidiFile("../songs/0.mid", clip=True)
         result_array = midi_to_array(mid)
         # plt.plot(
         #     range(result_array.shape[0]),
