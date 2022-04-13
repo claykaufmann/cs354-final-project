@@ -2,12 +2,9 @@
 this file loads the data set for pytorch
 """
 import torch
-import torch.nn as nn
 import torch.utils.data as data
-import math
 import numpy as np
 import os
-from MidiProcessing import midi_to_array
 
 
 class VideoGameMusicDataset(data.Dataset):
@@ -27,7 +24,8 @@ class VideoGameMusicDataset(data.Dataset):
         return a list of files within the data folder
         these are just the names, not concatenated with the root dir
         """
-        files = []
+        # collect all files within data directory
+        files = [f for f in os.listdir(self.root_dir)]
 
         return files
 
