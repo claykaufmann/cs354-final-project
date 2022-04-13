@@ -149,6 +149,3 @@ def main():
 
     # convert back to midi
     mid_new = array_to_midi(result_array, 545455)
-
-
-main()
