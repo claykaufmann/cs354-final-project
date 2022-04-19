@@ -5,6 +5,11 @@ import torch
 import torch.utils.data as data
 import numpy as np
 import os
+from util.constants import *
+import random
+
+
+SEQUENCE_START = 0
 
 
 class VideoGameMusicDataset(data.Dataset):
@@ -12,12 +17,14 @@ class VideoGameMusicDataset(data.Dataset):
     represents the video game music dataset
     """
 
-    def __init__(self, data_folder_path) -> None:
+    def __init__(self, data_folder_path, max_sequence) -> None:
         super(VideoGameMusicDataset).__init__()
 
         self.root_dir = data_folder_path
 
         self.files = self.get_files()
+
+        self.max_seq = max_sequence
 
     def get_files(self):
         """
@@ -41,9 +48,49 @@ class VideoGameMusicDataset(data.Dataset):
 
         filename = os.path.join(self.root_dir, self.files[index])
 
-        sample = np.load(filename)
+        raw_mid = torch.tensor(np.load(filename, allow_pickle=True))
 
-        # if self.transform:
-        #     sample = self.transform(sample)
+        x, tgt = process_midi(raw_mid, self.max_seq, None)
 
-        return sample
+        return (x, tgt)
+
+
+def process_midi(raw_mid, max_seq, random_seq):
+    """
+    returns a target for transformer
+    """
+
+    x = torch.full((max_seq,), TOKEN_PAD, dtype=TORCH_LABEL_TYPE)
+    tgt = torch.full((max_seq,), TOKEN_PAD, dtype=TORCH_LABEL_TYPE)
+
+    raw_len = len(raw_mid)
+    full_seq = max_seq + 1  # Performing seq2seq
+
+    if raw_len == 0:
+        return x, tgt
+
+    if raw_len < full_seq:
+        x[:raw_len] = raw_mid
+        tgt[: raw_len - 1] = raw_mid[1:]
+        tgt[raw_len] = TOKEN_END
+    else:
+        # Randomly selecting a range
+        if random_seq:
+            end_range = raw_len - full_seq
+            start = random.randint(SEQUENCE_START, end_range)
+
+        # Always taking from the start to as far as we can
+        else:
+            start = SEQUENCE_START
+
+        end = start + full_seq
+
+        data = raw_mid[start:end]
+
+        x = data[:max_seq]
+        tgt = data[1:full_seq]
+
+    # print("x:",x)
+    # print("tgt:",tgt)
+
+    return x, tgt
