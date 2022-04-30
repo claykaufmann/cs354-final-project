@@ -5,8 +5,7 @@ import numpy as np
 import os
 
 
-
-directory = '../songs/'
+directory = "data/raw/"
 
 for filename in os.listdir(directory):
     if filename.endswith(".mid"):
@@ -23,6 +22,9 @@ for filename in os.listdir(directory):
         # plt.show()
 
         # print(result_array)
-        print(result_array.shape)
-        
-        np.save(f"data/{filename}.npy", result_array)
+
+        # resize the array to the base size of 5000 features to start
+        new_array = result_array[:5000]
+        print(new_array.shape)
+
+        np.save(f"data/processed/{filename}.npy", new_array)

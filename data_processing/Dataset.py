@@ -90,7 +90,4 @@ def process_midi(raw_mid, max_seq, random_seq):
         x = data[:max_seq]
         tgt = data[1:full_seq]
 
-    # print("x:",x)
-    # print("tgt:",tgt)
-
     return x, tgt
