@@ -34,7 +34,8 @@ class PositionalEncoding(nn.Module):
     def forward(self, token_embedding: torch.tensor) -> torch.tensor:
         # Residual connection + pos encoding
         return self.dropout(
-            token_embedding + self.pos_encoding[: token_embedding.size(0), :]
+            token_embedding
+            + self.pos_encoding[: token_embedding.size(1), :]  # changed 0 to 1 here
         )
 
 
@@ -53,6 +54,7 @@ class Transformer(nn.Module):
         num_encoder_layers,
         num_decoder_layers,
         dropout_p,
+        max_len=5000,
     ):
         super().__init__()
 
@@ -62,7 +64,7 @@ class Transformer(nn.Module):
 
         # LAYERS
         self.positional_encoder = PositionalEncoding(
-            dim_model=dim_model, dropout_p=dropout_p, max_len=5000
+            dim_model=dim_model, dropout_p=dropout_p, max_len=max_len
         )
         self.embedding = nn.Embedding(num_tokens, dim_model)
         self.transformer = nn.Transformer(
@@ -86,8 +88,15 @@ class Transformer(nn.Module):
 
         # We could use the parameter batch_first=True, but our KDL version doesn't support it yet, so we permute
         # to obtain size (sequence length, batch_size, dim_model),
-        src = src.permute(1, 0, 2)
-        tgt = tgt.permute(1, 0, 2)
+
+        # NOTE: these seem to include the num tokens in the 4th dimension, might not be necessary, we may want to cut out dim_model (dim 3)
+        src = src.permute(1, 0, 3, 2)
+        tgt = tgt.permute(1, 0, 3, 2)
+
+        # cut out the 4th dim
+        src = src[:, :, :]
+        tgt = tgt[:, :, :]
+        print(src.shape)
 
         # Transformer blocks - Out size = (sequence length, batch_size, num_tokens)
         transformer_out = self.transformer(
