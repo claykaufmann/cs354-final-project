@@ -67,14 +67,14 @@ class Transformer(nn.Module):
 
     def __init__(
         self,
-        num_tokens,
-        dim_model,
-        num_heads,
-        num_encoder_layers,
-        num_decoder_layers,
-        dropout_p,
+        num_tokens: int,
+        dim_model: int,
+        num_heads: int,
+        num_encoder_layers: int,
+        num_decoder_layers: int,
+        dropout_p: float,
         max_len=5000,
-    ):
+    ) -> None:
         """
         Constructor
 
@@ -113,7 +113,14 @@ class Transformer(nn.Module):
         # final out layer
         self.out = nn.Linear(dim_model, num_tokens)
 
-    def forward(self, src, tgt, tgt_mask=None, src_pad_mask=None, tgt_pad_mask=None):
+    def forward(
+        self,
+        src: torch.Tensor,
+        tgt: torch.Tensor,
+        tgt_mask=None,
+        src_pad_mask=None,
+        tgt_pad_mask=None,
+    ) -> torch.Tensor:
         """
         forward propagation function
 
@@ -156,7 +163,7 @@ class Transformer(nn.Module):
         # return out
         return out
 
-    def get_tgt_mask(self, size) -> torch.tensor:
+    def get_tgt_mask(self, size: int) -> torch.Tensor:
         """
         generate a tgt mask
 
