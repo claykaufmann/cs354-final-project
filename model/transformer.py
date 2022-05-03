@@ -6,7 +6,8 @@ from torch import Tensor
 
 class PositionalEncoding(nn.Module):
     """
-    positional encoding module, allows us to make positional encoding on models
+    positional encoding module, allows us to make positional encoding on modelsx
+    Taken from https://pytorch.org/tutorials/beginner/transformer_tutorial.html
     """
 
     def __init__(self, dim_model: int, dropout_p: float, max_len: int) -> None:
@@ -20,7 +21,6 @@ class PositionalEncoding(nn.Module):
         """
 
         super().__init__()
-        # Taken from https://pytorch.org/tutorials/beginner/transformer_tutorial.html
 
         # create dropout
         self.dropout = nn.Dropout(dropout_p)
@@ -49,12 +49,11 @@ class PositionalEncoding(nn.Module):
         PARAMS:
         token_embedding: the embedding of tokens created by the transformer
 
-        RETURNS: a tensor with the positional encoding
+        RETURNS: a tensor with the positional encoding SHAPE: (batch size, seq_len, dim_model)
         """
 
         return self.dropout(
-            token_embedding
-            + self.pos_encoding[: token_embedding.size(0), :]  # changed 0 to 1 here
+            token_embedding + self.pos_encoding[: token_embedding.size(0), :]
         )
 
 
