@@ -34,7 +34,8 @@ class PositionalEncoding(nn.Module):
     def forward(self, token_embedding: torch.tensor) -> torch.tensor:
         # Residual connection + pos encoding
         return self.dropout(
-            token_embedding + self.pos_encoding[: token_embedding.size(0), :]
+            token_embedding
+            + self.pos_encoding[: token_embedding.size(0), :]  # changed 0 to 1 here
         )
 
 
@@ -53,6 +54,7 @@ class Transformer(nn.Module):
         num_encoder_layers,
         num_decoder_layers,
         dropout_p,
+        max_len=5000,
     ):
         super().__init__()
 
@@ -62,7 +64,7 @@ class Transformer(nn.Module):
 
         # LAYERS
         self.positional_encoder = PositionalEncoding(
-            dim_model=dim_model, dropout_p=dropout_p, max_len=5000
+            dim_model=dim_model, dropout_p=dropout_p, max_len=max_len
         )
         self.embedding = nn.Embedding(num_tokens, dim_model)
         self.transformer = nn.Transformer(
@@ -77,6 +79,8 @@ class Transformer(nn.Module):
     def forward(self, src, tgt, tgt_mask=None, src_pad_mask=None, tgt_pad_mask=None):
         # Src size must be (batch_size, src sequence length)
         # Tgt size must be (batch_size, tgt sequence length)
+        src = src.permute(1, 0)
+        tgt = tgt.permute(1, 0)
 
         # Embedding + positional encoding - Out size = (batch_size, sequence length, dim_model)
         src = self.embedding(src) * math.sqrt(self.dim_model)
