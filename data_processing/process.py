@@ -1,6 +1,5 @@
 from MidiProcessing import midi_to_array
-from mido import MidiFile, MidiTrack, MetaMessage, Message
-import matplotlib.pyplot as plt
+from mido import MidiFile
 import numpy as np
 import os
 
