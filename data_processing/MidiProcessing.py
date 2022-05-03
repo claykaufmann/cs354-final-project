@@ -6,6 +6,8 @@ import numpy as np
 """
 a series of helper functions designed to encode a midi file into a 2D numpy array
 
+DEPCRECATED - this is not needed for our project
+
 taken from "https://medium.com/analytics-vidhya/convert-midi-file-to-numpy-array-in-python-7d00531890c"
 """
 
