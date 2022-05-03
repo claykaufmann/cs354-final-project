@@ -4,22 +4,33 @@ import math
 
 
 class PositionalEncoding(nn.Module):
+    """
+    positional encoding module, allows us to make positional encoding on models
+    """
+
     def __init__(self, dim_model, dropout_p, max_len):
+        """
+        constructor
+
+        PARAMS:
+        dim_model: the core models dimensionality
+        dropout_p: the dropout of the model
+        max_len: the max length of the encoding
+        """
+
         super().__init__()
         # Modified version from: https://pytorch.org/tutorials/beginner/transformer_tutorial.html
         # max_len determines how far the position can have an effect on a token (window)
 
-        # Info
+        # create dropout
         self.dropout = nn.Dropout(dropout_p)
 
-        # Encoding - From formula
+        # create encoding
         pos_encoding = torch.zeros(max_len, dim_model)
-        positions_list = torch.arange(0, max_len, dtype=torch.float).view(
-            -1, 1
-        )  # 0, 1, 2, 3, 4, 5
+        positions_list = torch.arange(0, max_len, dtype=torch.float).view(-1, 1)
         division_term = torch.exp(
             torch.arange(0, dim_model, 2).float() * (-math.log(10000.0)) / dim_model
-        )  # 1000^(2i/dim_model)
+        )
 
         # PE(pos, 2i) = sin(pos/1000^(2i/dim_model))
         pos_encoding[:, 0::2] = torch.sin(positions_list * division_term)
@@ -32,7 +43,15 @@ class PositionalEncoding(nn.Module):
         self.register_buffer("pos_encoding", pos_encoding)
 
     def forward(self, token_embedding: torch.tensor) -> torch.tensor:
-        # Residual connection + pos encoding
+        """
+        forward function
+
+        PARAMS:
+        token_embedding: the embedding of tokens created by the transformer
+
+        RETURNS: a tensor with the positional encoding
+        """
+
         return self.dropout(
             token_embedding
             + self.pos_encoding[: token_embedding.size(0), :]  # changed 0 to 1 here
@@ -41,11 +60,11 @@ class PositionalEncoding(nn.Module):
 
 class Transformer(nn.Module):
     """
-    Model from "A detailed guide to Pytorch's nn.Transformer() module.", by
-    Daniel Melchor: https://medium.com/@danielmelchor/a-detailed-guide-to-pytorchs-nn-transformer-module-c80afbc9ffb1
+    Transformer model
+    At its core, a wrapper aorund the core PyTorch transformer module,
+    that includes positional encoding and embeding
     """
 
-    # Constructor
     def __init__(
         self,
         num_tokens,
@@ -56,17 +75,33 @@ class Transformer(nn.Module):
         dropout_p,
         max_len=5000,
     ):
+        """
+        Constructor
+
+        PARAMS:
+        num_tokens: the number of tokens to use
+        dim_model: the dimensionality of the model
+        num_heads: the number of heads to use for multi-head attention
+        num_encoder_layers: how many encoder layers to use
+        num_decoder_layers: the number of decoder layers to sue
+        dropout_p: the dropout percentage
+        max_len: the max length of the positional encoder
+        """
         super().__init__()
 
-        # INFO
+        # set model type, and save model dim
         self.model_type = "Transformer"
         self.dim_model = dim_model
 
-        # LAYERS
+        # save positional encoder
         self.positional_encoder = PositionalEncoding(
             dim_model=dim_model, dropout_p=dropout_p, max_len=max_len
         )
+
+        # save embedding
         self.embedding = nn.Embedding(num_tokens, dim_model)
+
+        # create core transformer
         self.transformer = nn.Transformer(
             d_model=dim_model,
             nhead=num_heads,
@@ -74,26 +109,39 @@ class Transformer(nn.Module):
             num_decoder_layers=num_decoder_layers,
             dropout=dropout_p,
         )
+
+        # final out layer
         self.out = nn.Linear(dim_model, num_tokens)
 
     def forward(self, src, tgt, tgt_mask=None, src_pad_mask=None, tgt_pad_mask=None):
-        # Src size must be (batch_size, src sequence length)
-        # Tgt size must be (batch_size, tgt sequence length)
+        """
+        forward propagation function
+
+        PARAMS:
+        src: the src (X) tensor, shape: (src sequence length, batch size)
+        tgt: the tgt (y) tensor shape: (tgt sequence length, batch size) (NOTE: src and tgt should have same length)
+        tgt_mask: the tgt_mask
+        src_pad_mask: if needed, adds padding
+        tgt_pad_mask: same as src_pad_mask
+        """
+        # swap batch and sequence length, so batch is first
         src = src.permute(1, 0)
         tgt = tgt.permute(1, 0)
 
-        # Embedding + positional encoding - Out size = (batch_size, sequence length, dim_model)
+        # pass src/tgt through embedding and positional encoder
+        # out size of above src and tgt is (batch size, sequence length, dim_model)
         src = self.embedding(src) * math.sqrt(self.dim_model)
         tgt = self.embedding(tgt) * math.sqrt(self.dim_model)
         src = self.positional_encoder(src)
         tgt = self.positional_encoder(tgt)
 
-        # We could use the parameter batch_first=True, but our KDL version doesn't support it yet, so we permute
-        # to obtain size (sequence length, batch_size, dim_model),
+        # swap batch and seq length back
+        # SHAPE: (seq length, batch size, dim_model)
         src = src.permute(1, 0, 2)
         tgt = tgt.permute(1, 0, 2)
 
-        # Transformer blocks - Out size = (sequence length, batch_size, num_tokens)
+        # pass src and tgt through the transformer
+        # Out size is (sequence length, batch_size, num_tokens)
         transformer_out = self.transformer(
             src,
             tgt,
@@ -101,27 +149,33 @@ class Transformer(nn.Module):
             src_key_padding_mask=src_pad_mask,
             tgt_key_padding_mask=tgt_pad_mask,
         )
+
+        # pass through final FC layer
         out = self.out(transformer_out)
 
+        # return out
         return out
 
     def get_tgt_mask(self, size) -> torch.tensor:
-        # Generates a squeare matrix where the each row allows one word more to be seen
+        """
+        generate a tgt mask
+
+        PARAMS:
+        size: the size of the target mask
+        """
         mask = torch.tril(torch.ones(size, size) == 1)  # Lower triangular matrix
         mask = mask.float()
         mask = mask.masked_fill(mask == 0, float("-inf"))  # Convert zeros to -inf
         mask = mask.masked_fill(mask == 1, float(0.0))  # Convert ones to 0
 
-        # EX for size=5:
-        # [[0., -inf, -inf, -inf, -inf],
-        #  [0.,   0., -inf, -inf, -inf],
-        #  [0.,   0.,   0., -inf, -inf],
-        #  [0.,   0.,   0.,   0., -inf],
-        #  [0.,   0.,   0.,   0.,   0.]]
-
         return mask
 
-    def create_pad_mask(self, matrix: torch.tensor, pad_token: int) -> torch.tensor:
-        # If matrix = [1,2,3,0,0,0] where pad_token=0, the result mask is
-        # [False, False, False, True, True, True]
-        return matrix == pad_token
+    # def create_pad_mask(self, matrix: torch.tensor, pad_token: int) -> torch.tensor:
+    #     """
+    #     creates a padding mask
+
+    #     PARAMS:
+    #     matrix: the current tensor for input
+    #     pad_token: the number to compare for for the mask
+    #     """
+    #     return matrix == pad_token
