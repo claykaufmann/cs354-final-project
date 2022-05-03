@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 import math
+from torch import Tensor
 
 
 class PositionalEncoding(nn.Module):
@@ -8,7 +9,7 @@ class PositionalEncoding(nn.Module):
     positional encoding module, allows us to make positional encoding on models
     """
 
-    def __init__(self, dim_model, dropout_p, max_len):
+    def __init__(self, dim_model: int, dropout_p: float, max_len: int) -> None:
         """
         constructor
 
@@ -19,8 +20,7 @@ class PositionalEncoding(nn.Module):
         """
 
         super().__init__()
-        # Modified version from: https://pytorch.org/tutorials/beginner/transformer_tutorial.html
-        # max_len determines how far the position can have an effect on a token (window)
+        # Taken from https://pytorch.org/tutorials/beginner/transformer_tutorial.html
 
         # create dropout
         self.dropout = nn.Dropout(dropout_p)
@@ -42,7 +42,7 @@ class PositionalEncoding(nn.Module):
         pos_encoding = pos_encoding.unsqueeze(0).transpose(0, 1)
         self.register_buffer("pos_encoding", pos_encoding)
 
-    def forward(self, token_embedding: torch.tensor) -> torch.tensor:
+    def forward(self, token_embedding: Tensor) -> Tensor:
         """
         forward function
 
@@ -115,12 +115,12 @@ class Transformer(nn.Module):
 
     def forward(
         self,
-        src: torch.Tensor,
-        tgt: torch.Tensor,
+        src: Tensor,
+        tgt: Tensor,
         tgt_mask=None,
         src_pad_mask=None,
         tgt_pad_mask=None,
-    ) -> torch.Tensor:
+    ) -> Tensor:
         """
         forward propagation function
 
@@ -163,7 +163,7 @@ class Transformer(nn.Module):
         # return out
         return out
 
-    def get_tgt_mask(self, size: int) -> torch.Tensor:
+    def get_tgt_mask(self, size: int) -> Tensor:
         """
         generate a tgt mask
 
@@ -176,13 +176,3 @@ class Transformer(nn.Module):
         mask = mask.masked_fill(mask == 1, float(0.0))  # Convert ones to 0
 
         return mask
-
-    # def create_pad_mask(self, matrix: torch.tensor, pad_token: int) -> torch.tensor:
-    #     """
-    #     creates a padding mask
-
-    #     PARAMS:
-    #     matrix: the current tensor for input
-    #     pad_token: the number to compare for for the mask
-    #     """
-    #     return matrix == pad_token
