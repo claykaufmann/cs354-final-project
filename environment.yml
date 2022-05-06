@@ -5,7 +5,7 @@ dependencies:
   - pytorch
   - tqdm
   - matplotlib
-  - python-3.10.4
+  - python=3.10.4
   - numpy
   - pandas
   - pip
