@@ -1,17 +1,37 @@
 """
 For training on the VACC
 """
+
 from data_processing.Datasets import get_maestro_dataset, collate_fn
 from torch.utils.data import DataLoader
-import torch.optim as optim
 import torch
 import torch.nn as nn
 from model.transformer import Transformer
-from sklearn.metrics import accuracy_score
 from tqdm import tqdm
-from tqdm.autonotebook import trange
 from time import sleep
 from functools import partial
+import matplotlib.pyplot as plt
+
+# for now, set hyperparameter constants here
+# training hyperparams
+EPOCHS = 35
+LEARNING_RATE = 0.0001
+
+# data hyperparams
+SEQ_LEN = 2048
+BATCH_SIZE = 32
+EVAL_BATCH_SIZE = 10
+
+# model hyperparams
+# NUM_TOKENS should be one of the following, depending on dataset representation:
+# pitch: 128
+# event: 388
+NUM_TOKENS = 388
+DIM_MODEL = 512
+NUM_HEADS = 2
+NUM_ENCODER_LAYERS = 3
+NUM_DECODER_LAYERS = 3
+DROPOUT_P = 0.1
 
 
 def train(model, optimizer, loss_fn, dataloader, device):
@@ -93,6 +113,10 @@ def validation(model, loss_fn, dataloader, device):
                 X = batch[0].clone().detach()
                 y = batch[2].clone().detach()
 
+                # convert tensor to long for the transformer
+                X = X.long().to(device)
+                y = y.long().to(device)
+
                 # Now we shift the tgt by one so with the <SOS> we predict the token at pos 1
                 y_input = y
                 y_expected = y
@@ -149,13 +173,12 @@ def main():
     """
     main function
     """
-    # TODO collect params from passed in config.yml file path
 
     # get device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # load data
-    train_data, test_data = get_maestro_dataset("data/maestro", representation="pitch")
+    train_data, test_data = get_maestro_dataset("data/maestro", representation="event")
 
     # Build dataloaders
     train_dataloader = DataLoader(
@@ -188,11 +211,23 @@ def main():
     # create loss function
     loss_fn = nn.CrossEntropyLoss()
 
-    # TODO train
+    # train
+    train_loss_list, validation_loss_list = fit(
+        model, opt, loss_fn, train_dataloader, val_dataloader, EPOCHS, device
+    )
 
-    # TODO save results
+    # save results
+    torch.save(model.state_dict(), "./transformer_music.pth")
 
-    # TODO save plots
+    # gen plots
+    plot_epochs = range(1, EPOCHS + 1)
+    plt.plot(plot_epochs, train_loss_list, "g", label="Training loss")
+    plt.plot(plot_epochs, validation_loss_list, "g", label="Validation loss")
+    plt.title("Training and validation loss")
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.savefig("./loss_plot.png")
 
 
 main()
