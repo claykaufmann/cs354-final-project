@@ -14,11 +14,11 @@ import matplotlib.pyplot as plt
 
 # for now, set hyperparameter constants here
 # training hyperparams
-EPOCHS = 35
+EPOCHS = 25
 LEARNING_RATE = 0.0001
 
 # data hyperparams
-SEQ_LEN = 2048
+SEQ_LEN = 750
 BATCH_SIZE = 32
 EVAL_BATCH_SIZE = 10
 
