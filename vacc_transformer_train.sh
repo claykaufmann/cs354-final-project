@@ -38,4 +38,4 @@ echo "Running host:    ${SLURMD_NODENAME}"
 echo "Assigned nodes:  ${SLURM_JOB_NODELIST}"
 echo "Job ID:          ${SLURM_JOBID}"
 conda activate music_transformer
-time python train.py
+time python train_transformer.py
