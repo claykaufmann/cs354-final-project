@@ -3,11 +3,9 @@ import torch.nn as nn
 from typing import List
 
 
-class SongAE(nn.Module):
+class FlexibleAE(nn.Module):
     """
-    a song autoencoder
-
-    TODO - this is not completed
+    Flexible Autoeconder Class
     """
 
     def __init__(self, layer_sizes: List[int]):
