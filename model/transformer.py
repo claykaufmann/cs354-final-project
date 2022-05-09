@@ -1,7 +1,9 @@
 import torch.nn as nn
 import torch
 import math
+from tqdm import tqdm, trange
 from torch import Tensor
+from time import sleep
 
 
 class PositionalEncoding(nn.Module):
@@ -185,20 +187,27 @@ class Transformer(nn.Module):
 
         assert not self.training, "Cannot generate if model is in training mode"
 
-        print(f"Generating Sequence of length {target_seq_length}")
+        print(
+            f"Generating Sequence of length {target_seq_length}, with an initial primer of length {primer.shape[0]}"
+        )
 
-        for _ in range(target_seq_length):
-            # generate 1024 targets
-            tgt_mask = self.get_tgt_mask(labels.size(0)).to(device)
+        # use tqdm to display a nice progress bar
+        with trange(primer.shape[0], target_seq_length) as t:
+            for _ in t:
+                # gen target mask
+                tgt_mask = self.get_tgt_mask(labels.size(0)).to(device)
 
-            # get prediction
-            pred = self(primer, labels, tgt_mask)
+                # get prediction
+                pred = self(primer, labels, tgt_mask)
 
-            # take the most likely item from the tensor
-            next_item = pred.topk(1)[1].view(-1)[-1].item()
+                # take the most likely item from the tensor
+                next_item = pred.topk(1)[1].view(-1)[-1].item()
 
-            # append to primer
-            primer = torch.cat((primer, torch.tensor([[next_item]])))
+                # append to primer
+                primer = torch.cat((primer, torch.tensor([[next_item]])))
+
+                # update progress bar
+                t.set_postfix(length=primer.shape[0])
 
         # return generated sequence
         return primer
