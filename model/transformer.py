@@ -175,3 +175,33 @@ class Transformer(nn.Module):
         mask = mask.masked_fill(mask == 1, float(0.0))  # Convert ones to 0
 
         return mask
+
+    def generate(
+        self, primer, device, labels, target_seq_length=1024, beam=0, beam_chance=1.0
+    ):
+        """
+        generate function generates music given a primer sample if available
+        """
+
+        assert not self.training, "Cannot generate if model is in training mode"
+
+        print(f"Generating Sequence of length {target_seq_length}")
+
+        outputs = []
+
+        num_tokens = len(primer[0])
+
+        for _ in range(target_seq_length):
+            # generate 1024 targets
+            tgt_mask = self.get_tgt_mask(labels.size(0)).to(device)
+
+            pred = self(primer, labels, tgt_mask)
+
+            next_item = pred.topk(1)[1].view(-1)[-1].item()
+
+            print(next_item)
+            outputs.append(next_item)
+
+            break
+
+        return outputs
