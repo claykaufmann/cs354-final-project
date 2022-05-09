@@ -187,21 +187,18 @@ class Transformer(nn.Module):
 
         print(f"Generating Sequence of length {target_seq_length}")
 
-        outputs = []
-
-        num_tokens = len(primer[0])
-
         for _ in range(target_seq_length):
             # generate 1024 targets
             tgt_mask = self.get_tgt_mask(labels.size(0)).to(device)
 
+            # get prediction
             pred = self(primer, labels, tgt_mask)
 
+            # take the most likely item from the tensor
             next_item = pred.topk(1)[1].view(-1)[-1].item()
 
-            print(next_item)
-            outputs.append(next_item)
+            # append to primer
+            primer = torch.cat((primer, torch.tensor([[next_item]])))
 
-            break
-
-        return outputs
+        # return generated sequence
+        return primer
