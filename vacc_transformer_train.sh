@@ -3,19 +3,19 @@
 #SBATCH --partition=dggpu
 
 # Request Nodes
-#SBATCH --nodes=1
+#SBATCH --nodes=2
 
 # Req CPU Cores
 #SBATCH --ntasks=2
 
 # Req GPUs
-#SBATCH --gres=gpu:4
+#SBATCH --gres=gpu:8
 
 # Req Memory
 #SBATCH --mem=30G
 
 # Run for x minutes
-#SBATCH --time=1000
+#SBATCH --time=1200
 
 # Name of job
 #SBATCH --job-name=MusicTransformer
