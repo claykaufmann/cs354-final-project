@@ -18,7 +18,7 @@ EPOCHS = 25
 LEARNING_RATE = 1e-3
 
 # data hyperparams
-SEQ_LEN = 2048
+SEQ_LEN = 1024
 BATCH_SIZE = 32
 EVAL_BATCH_SIZE = 10
 
@@ -179,6 +179,7 @@ def main():
 
     # get device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(device)
 
     # load data
     train_data, test_data = get_maestro_dataset("data/maestro", representation="event")
