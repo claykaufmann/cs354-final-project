@@ -198,10 +198,13 @@ class Transformer(nn.Module):
                 tgt_mask = self.get_tgt_mask(labels.size(0)).to(device)
 
                 # get prediction
-                pred = self(primer, labels, tgt_mask)
+                pred: Tensor = self(primer, labels, tgt_mask)
 
-                # take the most likely item from the tensor
-                next_item = pred.topk(1)[1].view(-1)[-1].item()
+                # pred is the possibilities of the next token
+                # need to select a token from there, and append
+
+                # take the most likely item from the tensor (this line is fucked, keep getting 355 as output)
+                next_item = pred.max().long().item()
 
                 # append to primer
                 primer = torch.cat((primer, torch.tensor([[next_item]])))
