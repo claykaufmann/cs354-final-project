@@ -1,9 +1,8 @@
 import torch.nn as nn
 import torch
 import math
-from tqdm import tqdm, trange
+from tqdm import trange
 from torch import Tensor
-from time import sleep
 
 
 class PositionalEncoding(nn.Module):
@@ -179,10 +178,20 @@ class Transformer(nn.Module):
         return mask
 
     def generate(
-        self, primer, device, labels, target_seq_length=1024, beam=0, beam_chance=1.0
+        self,
+        primer,
+        device,
+        labels,
+        target_seq_length=1024,
+        beam=0,
+        beam_chance=1.0,
+        single_token=False,
     ):
         """
         generate function generates music given a primer sample if available
+
+        single token refers to if we should generate using purely the last token generated,
+        or use the entire sequence generated so far
         """
 
         assert not self.training, "Cannot generate if model is in training mode"
@@ -194,14 +203,24 @@ class Transformer(nn.Module):
         # use tqdm to display a nice progress bar
         with trange(primer.shape[0], target_seq_length) as t:
             for _ in t:
-                # gen target mask
-                tgt_mask = self.get_tgt_mask(labels.size(0)).to(device)
+                # single token
+                if single_token:
+                    single_index = primer[primer.shape[0] - 1 : primer.shape[0]]
+                    single_index_label = labels[labels.shape[0] - 1 : labels.shape[0]]
+                    single_tgt_mask = self.get_tgt_mask(single_index_label.size(0)).to(
+                        device
+                    )
 
-                # get prediction
-                pred: Tensor = self(primer, labels, tgt_mask)
+                    pred: Tensor = self(
+                        single_index, single_index_label, single_tgt_mask
+                    )
 
-                # pred is the possibilities of the next token
-                # need to select a token from there, and append
+                else:
+                    # gen target mask
+                    tgt_mask = self.get_tgt_mask(labels.size(0)).to(device)
+
+                    # get prediction from last primer
+                    pred: Tensor = self(primer, labels, tgt_mask)
 
                 # take the most likely item from the tensor (this line is fucked, keep getting 355 as output)
                 next_item = pred.max().long().item()
