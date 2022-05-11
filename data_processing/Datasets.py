@@ -25,17 +25,10 @@ def get_maestro_dataset(path: str, representation: str = "pitch"):
     maestro.convert()
 
     # turn the dataset into a pytorch dataset
-    data = maestro.to_pytorch_dataset(representation=representation)
-
-    # train/test splits
-    train_size = int(0.85 * len(data))
-    test_size = len(data) - train_size
-
-    # create train/test datasets
-    train_data, test_data = torch.utils.data.random_split(data, [train_size, test_size])
+    dataset = maestro.to_pytorch_dataset(representation=representation, splits=0.85)
 
     # return datasets
-    return train_data, test_data
+    return dataset["train"], dataset["test"]
 
 
 def get_nes_dataset(path: str, representation: str = "pitch"):
@@ -46,17 +39,10 @@ def get_nes_dataset(path: str, representation: str = "pitch"):
 
     nes.convert()
 
-    data = nes.to_pytorch_dataset(representation=representation)
-
-    # train/test splits
-    train_size = int(0.85 * len(data))
-    test_size = len(data) - train_size
-
-    # create train/test datasets
-    train_data, test_data = torch.utils.data.random_split(data, [train_size, test_size])
+    data = nes.to_pytorch_dataset(representation=representation, splits=0.85)
 
     # return datasets
-    return train_data, test_data
+    return data["train"], data["test"]
 
 
 def collate_fn(batch, seq_len, device):
@@ -87,7 +73,7 @@ def collate_fn(batch, seq_len, device):
 
     # set length to SEQ_LEN + 1
     # randomly sample
-    low_bound = random.randint(0, 10000)
+    low_bound = random.randint(0, 5000)
     high_bound = low_bound + seq_len + 1
 
     batch = [torch.Tensor(t)[low_bound:high_bound].squeeze().to(device) for t in batch]
