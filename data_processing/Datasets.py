@@ -10,13 +10,16 @@ import random
 import muspy
 
 
-def get_maestro_dataset(path: str, representation: str = "pitch"):
+def get_maestro_dataset(
+    path: str, representation: str = "pitch", train_test_split: float = 0.85
+):
     """
     a simple wrapper for collecting maestro dataset
 
     params:
     path: path to store the data
-    representation: the way to represent the dataset
+    representation: the way to represent the dataset, defaults to pitch
+    train_test_split: percentage of training data to test data, defaults to 0.85
     """
     # load the dataset
     maestro = muspy.MAESTRODatasetV3(path, download_and_extract=True)
@@ -25,13 +28,17 @@ def get_maestro_dataset(path: str, representation: str = "pitch"):
     maestro.convert()
 
     # turn the dataset into a pytorch dataset
-    dataset = maestro.to_pytorch_dataset(representation=representation, splits=0.85)
+    dataset = maestro.to_pytorch_dataset(
+        representation=representation, splits=train_test_split
+    )
 
     # return datasets
     return dataset["train"], dataset["test"]
 
 
-def get_nes_dataset(path: str, representation: str = "pitch"):
+def get_nes_dataset(
+    path: str, representation: str = "pitch", train_test_split: float = 0.85
+):
     """
     collects the NES music dataset from muspy
     """
@@ -39,7 +46,9 @@ def get_nes_dataset(path: str, representation: str = "pitch"):
 
     nes.convert()
 
-    data = nes.to_pytorch_dataset(representation=representation, splits=0.85)
+    data = nes.to_pytorch_dataset(
+        representation=representation, splits=train_test_split
+    )
 
     # return datasets
     return data["train"], data["test"]
