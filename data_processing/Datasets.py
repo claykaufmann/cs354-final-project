@@ -6,6 +6,7 @@ but we found muspy, and it is much simpler, so we
 used that.
 """
 import torch
+import random
 import muspy
 
 
@@ -85,7 +86,11 @@ def collate_fn(batch, seq_len, device):
     lengths = torch.tensor([t.shape[0] for t in batch]).to(device)
 
     # set length to SEQ_LEN + 1
-    batch = [torch.Tensor(t)[: seq_len + 1].squeeze().to(device) for t in batch]
+    # randomly sample
+    low_bound = random.randint(0, 10000)
+    high_bound = low_bound + seq_len + 1
+
+    batch = [torch.Tensor(t)[low_bound:high_bound].squeeze().to(device) for t in batch]
 
     # this isn't technically needed since we cut all sequences down, but just in case
     batch = torch.nn.utils.rnn.pad_sequence(batch)
