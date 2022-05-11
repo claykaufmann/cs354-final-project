@@ -1,0 +1,17 @@
+name: music-cuda
+channels:
+  - defaults
+dependencies:
+  - python=3.10.4
+  - cudatoolkit=11.3
+  - pytorch
+  - torchvision
+  - torchaudio
+  - numpy
+  - pandas
+  - pip
+  - jupyter
+  - matplotlib
+  - tqdm
+  - notebook
+prefix: C:\Users\clayk\miniconda3\envs\music-cuda
