@@ -9,7 +9,7 @@ import torch
 import muspy
 
 
-def get_maestro_dataset(path: str, representation: str = "pianoroll"):
+def get_maestro_dataset(path: str, representation: str = "pitch"):
     """
     a simple wrapper for collecting maestro dataset
 
@@ -25,6 +25,27 @@ def get_maestro_dataset(path: str, representation: str = "pianoroll"):
 
     # turn the dataset into a pytorch dataset
     data = maestro.to_pytorch_dataset(representation=representation)
+
+    # train/test splits
+    train_size = int(0.85 * len(data))
+    test_size = len(data) - train_size
+
+    # create train/test datasets
+    train_data, test_data = torch.utils.data.random_split(data, [train_size, test_size])
+
+    # return datasets
+    return train_data, test_data
+
+
+def get_nes_dataset(path: str, representation: str = "pitch"):
+    """
+    collects the NES music dataset from muspy
+    """
+    nes = muspy.NESMusicDatabase(path, download_and_extract=True)
+
+    nes.convert()
+
+    data = nes.to_pytorch_dataset(representation=representation)
 
     # train/test splits
     train_size = int(0.85 * len(data))
