@@ -220,13 +220,13 @@ class Transformer(nn.Module):
                     tgt_mask = self.get_tgt_mask(labels.size(0)).to(device)
 
                     # get prediction from last primer
-                    pred: Tensor = self(primer, labels, tgt_mask)
+                    pred: Tensor = self(primer, labels, tgt_mask).to(device)
 
                 # take the most likely item from the tensor (this line is fucked, keep getting 355 as output)
                 next_item = pred.max().long().item()
 
                 # append to primer
-                primer = torch.cat((primer, torch.tensor([[next_item]])))
+                primer = torch.cat((primer.to(device), torch.tensor([[next_item]]).to(device))).to(device)
 
                 # update progress bar
                 t.set_postfix(length=primer.shape[0])
