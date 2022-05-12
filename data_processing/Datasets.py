@@ -54,6 +54,19 @@ def get_nes_dataset(
     return data["train"], data["test"]
 
 
+def get_wiki_dataset(
+    path: str, representation: str = "event", train_test_split: float = 0.85
+):
+    wiki = muspy.WikifoniaDataset(path, download_and_extract=True).convert()
+
+    data = wiki.to_pytorch_dataset(
+        representation=representation, splits=train_test_split
+    )
+
+    # return datasets
+    return data["train"], data["test"]
+
+
 def collate_fn(batch, seq_len, device):
     """
     Pads batch of variable length music sequences
