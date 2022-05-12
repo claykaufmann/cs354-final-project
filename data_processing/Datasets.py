@@ -6,16 +6,20 @@ but we found muspy, and it is much simpler, so we
 used that.
 """
 import torch
+import random
 import muspy
 
 
-def get_maestro_dataset(path: str, representation: str = "pianoroll"):
+def get_maestro_dataset(
+    path: str, representation: str = "pitch", train_test_split: float = 0.85
+):
     """
     a simple wrapper for collecting maestro dataset
 
     params:
     path: path to store the data
-    representation: the way to represent the dataset
+    representation: the way to represent the dataset, defaults to pitch
+    train_test_split: percentage of training data to test data, defaults to 0.85
     """
     # load the dataset
     maestro = muspy.MAESTRODatasetV3(path, download_and_extract=True)
@@ -24,17 +28,30 @@ def get_maestro_dataset(path: str, representation: str = "pianoroll"):
     maestro.convert()
 
     # turn the dataset into a pytorch dataset
-    data = maestro.to_pytorch_dataset(representation=representation)
-
-    # train/test splits
-    train_size = int(0.85 * len(data))
-    test_size = len(data) - train_size
-
-    # create train/test datasets
-    train_data, test_data = torch.utils.data.random_split(data, [train_size, test_size])
+    dataset = maestro.to_pytorch_dataset(
+        representation=representation, splits=train_test_split
+    )
 
     # return datasets
-    return train_data, test_data
+    return dataset["train"], dataset["test"]
+
+
+def get_nes_dataset(
+    path: str, representation: str = "pitch", train_test_split: float = 0.85
+):
+    """
+    collects the NES music dataset from muspy
+    """
+    nes = muspy.NESMusicDatabase(path, download_and_extract=True)
+
+    nes.convert()
+
+    data = nes.to_pytorch_dataset(
+        representation=representation, splits=train_test_split
+    )
+
+    # return datasets
+    return data["train"], data["test"]
 
 
 def collate_fn(batch, seq_len, device):
@@ -64,7 +81,11 @@ def collate_fn(batch, seq_len, device):
     lengths = torch.tensor([t.shape[0] for t in batch]).to(device)
 
     # set length to SEQ_LEN + 1
-    batch = [torch.Tensor(t)[: seq_len + 1].squeeze().to(device) for t in batch]
+    # randomly sample
+    low_bound = random.randint(0, 5000)
+    high_bound = low_bound + seq_len + 1
+
+    batch = [torch.Tensor(t)[low_bound:high_bound].squeeze().to(device) for t in batch]
 
     # this isn't technically needed since we cut all sequences down, but just in case
     batch = torch.nn.utils.rnn.pad_sequence(batch)

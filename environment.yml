@@ -1,0 +1,14 @@
+name: music_transformer
+channels:
+  - conda-forge
+dependencies:
+  - pytorch
+  - tqdm
+  - matplotlib
+  - python=3.10.4
+  - numpy
+  - pandas
+  - pip
+  - pip:
+      - muspy
+prefix: /opt/homebrew/Caskroom/miniforge/base/envs/music_transformer

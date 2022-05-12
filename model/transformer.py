@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 import math
+from tqdm import trange
 from torch import Tensor
 
 
@@ -175,3 +176,62 @@ class Transformer(nn.Module):
         mask = mask.masked_fill(mask == 1, float(0.0))  # Convert ones to 0
 
         return mask
+
+    def generate(
+        self,
+        primer,
+        device,
+        labels,
+        target_seq_length=1024,
+        beam=0,
+        beam_chance=1.0,
+        single_token=False,
+    ):
+        """
+        generate function generates music given a primer sample if available
+
+        single token refers to if we should generate using purely the last token generated,
+        or use the entire sequence generated so far
+        """
+
+        assert not self.training, "Cannot generate if model is in training mode"
+
+        print(
+            f"Generating Sequence of length {target_seq_length}, with an initial primer of length {primer.shape[0]}"
+        )
+
+        # use tqdm to display a nice progress bar
+        with trange(primer.shape[0], target_seq_length) as t:
+            for _ in t:
+                # single token
+                if single_token:
+                    single_index = primer[primer.shape[0] - 1 : primer.shape[0]]
+                    single_index_label = labels[labels.shape[0] - 1 : labels.shape[0]]
+                    single_tgt_mask = self.get_tgt_mask(single_index_label.size(0)).to(
+                        device
+                    )
+
+                    pred: Tensor = self(
+                        single_index, single_index_label, single_tgt_mask
+                    )
+
+                else:
+                    # gen target mask
+                    tgt_mask = self.get_tgt_mask(labels.size(0)).to(device)
+
+                    # get prediction from last primer
+                    pred: Tensor = self(primer, labels, tgt_mask).to(device)
+
+                # take the most likely item from the tensor (this line is fucked, keep getting 355 as output)
+                next_item = pred.max().long().item()
+
+                # append to primer
+                primer = torch.cat(
+                    (primer.to(device), torch.tensor([[next_item]]).to(device))
+                ).to(device)
+
+                # update progress bar
+                t.set_postfix(length=primer.shape[0])
+
+        # return generated sequence
+        return primer
