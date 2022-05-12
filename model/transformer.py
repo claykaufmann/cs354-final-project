@@ -226,7 +226,9 @@ class Transformer(nn.Module):
                 next_item = pred.max().long().item()
 
                 # append to primer
-                primer = torch.cat((primer.to(device), torch.tensor([[next_item]]).to(device))).to(device)
+                primer = torch.cat(
+                    (primer.to(device), torch.tensor([[next_item]]).to(device))
+                ).to(device)
 
                 # update progress bar
                 t.set_postfix(length=primer.shape[0])
