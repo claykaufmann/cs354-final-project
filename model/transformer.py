@@ -196,42 +196,27 @@ class Transformer(nn.Module):
 
         assert not self.training, "Cannot generate if model is in training mode"
 
-        print(
-            f"Generating Sequence of length {target_seq_length}, with an initial primer of length {primer.shape[0]}"
-        )
+        print(f"Generating Sequence of length {target_seq_length}")
 
-        # use tqdm to display a nice progress bar
-        with trange(primer.shape[0], target_seq_length) as t:
-            for _ in t:
-                # single token
-                if single_token:
-                    single_index = primer[primer.shape[0] - 1 : primer.shape[0]]
-                    single_index_label = labels[labels.shape[0] - 1 : labels.shape[0]]
-                    single_tgt_mask = self.get_tgt_mask(single_index_label.size(0)).to(
-                        device
-                    )
+        data = primer.clone().detach()
+        for _ in range(target_seq_length):
+            # single token
+            if single_token:
+                single_index = data[data.shape[0] - 1 : data.shape[0]]
+                single_index_label = labels[labels.shape[0] - 1 : labels.shape[0]]
+                pred: Tensor = self(single_index, single_index_label)
 
-                    pred: Tensor = self(
-                        single_index, single_index_label, single_tgt_mask
-                    )
+            else:
+                # get prediction from last primer
+                pred: Tensor = self(data, labels).to(device)
 
-                else:
-                    # gen target mask
-                    tgt_mask = self.get_tgt_mask(labels.size(0)).to(device)
+            # take the most likely item from the tensor (this line is fucked, keep getting 355 as output)
+            next_item = pred.max().long().item()
 
-                    # get prediction from last primer
-                    pred: Tensor = self(primer, labels, tgt_mask).to(device)
-
-                # take the most likely item from the tensor (this line is fucked, keep getting 355 as output)
-                next_item = pred.max().long().item()
-
-                # append to primer
-                primer = torch.cat(
-                    (primer.to(device), torch.tensor([[next_item]]).to(device))
-                ).to(device)
-
-                # update progress bar
-                t.set_postfix(length=primer.shape[0])
+            # append to primer
+            data = torch.cat(
+                (data.to(device), torch.tensor([[next_item]]).to(device))
+            ).to(device)
 
         # return generated sequence
-        return primer
+        return data
